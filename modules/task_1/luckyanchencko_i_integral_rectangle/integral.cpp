@@ -1,10 +1,10 @@
 // Copyright 2020 Luckyanchencko Ivan
+#include"../../../modules/task_1/luckyanchencko_i_integral_rectangle/integral.h"
 #include <mpi.h>
 #include <vector>
 #include <random>
 #include <ctime>
 #include <numeric>
-#include "Desktop/PP/pp_2020_autumn_informatics/modules/task_1/luckyanchencko_i_integral_rectangle/Integral.h"
 
 float func1(float x) { return 1 / (log(x) + sin(pow(x, 2))); }
 float func2(float x) { return (cos(x) + log(x)) / sin(x); }
@@ -16,10 +16,10 @@ float get_Paral_Integral(float (*func)(float), int a, int b) {
 
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
-    h = (b - a) / n;
+    h = (b - a) / static_cast<float>(n);
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
     for (int i = ProcRank + 1; i <= n; i += ProcNum) {
-        float x = (a + h * <double>(i)) - h / 2;
+        float x = (a + h * static_cast<float>(i)) - h / 2;
         res += func(x);
     }
     res = res * h;
@@ -30,9 +30,9 @@ float get_Paral_Integral(float (*func)(float), int a, int b) {
 float get_Integral(float(*func)(float), int a, int b) {
     int n = 10;
     float  h, ans = 0.0, res = 0.0;
-    h = (b - a) / n;
+    h = (b - a) / static_cast<float>(n);
     for (int i =0; i <= n; i++) {
-        float x = (a + h * <double>(i)) - h / 2;
+        float x = (a + h * static_cast<float>(i)) - h / 2;
         res += func(x);
     }
     res = res * h;
