@@ -4,7 +4,7 @@
 #include <random>
 #include <ctime>
 #include <numeric>
-#include "Desktop/PP/pp_2020_autumn_informatics/modules/task_1/luckyanchencko_i_integral_rectangle/integral.h"
+#include "Desktop/PP/pp_2020_autumn_informatics/modules/task_1/luckyanchencko_i_integral_rectangle/Integral.h"
 
 float func1(float x) { return 1 / (log(x) + sin(pow(x, 2))); }
 float func2(float x) { return (cos(x) + log(x)) / sin(x); }

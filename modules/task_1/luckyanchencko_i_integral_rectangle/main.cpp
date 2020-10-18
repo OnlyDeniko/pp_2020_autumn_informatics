@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include<mpi.h>
 #include<cmath>
-#include "./integral.h"
+#include "./Integral.h"
 
 TEST(Paral, Test_func1_1) {
     int ProcRank;
