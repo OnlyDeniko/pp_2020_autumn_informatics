@@ -11,30 +11,43 @@ TEST(Parallel_MPI, Test_1) {
     MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
     //std::cout << procRank + 1 << ' ' << procNum << '\n';
     size_t n = 3;
-    std::vector<double> a = {
-        10, 1,  -1,
-        1,  10, -1,
-        -1, 1,  10
-    };
-    std::vector<double> b = {11, 10, 10};
     double eps = 0.000001;
-    
-    double gg = 1;
-    for(auto &i : a) i = gg++;
-    for(auto &i : b) i = gg++;
-        //std::iota(a.begin(), a.end(), 1.);
-        //std::iota(b.begin(), b.end(), n * n + 1);
-    
+    std::vector<double> a(n * n, 1);
+    std::vector<double> b(n, 1);
+    if (!procRank) {
+        a = {
+            2, 1, 1,
+            1, -1, 0,
+            3, -1, 2
+        };
+        b = {
+            2, -2, 2
+        };
+        // double gg = 1;
+        // for(auto &i : a) i = gg++;
+        // for(auto &i : b) i = gg++;
+        makeBeautifulMatrix(a, b, n);
+        std::cout << "!\n";
+        for(auto i : a) std::cout << i << ' ';
+        std::cout << '\n';
+    }
     
     auto ans = zeidelParallel(a, b, n, eps);
     if (procRank == 0){
-        std::cout << "RES = ";
-        for(auto i : ans.second) std::cout << i << ' ';
-        std::cout << '\n';
+        // std::cout << "RES = !" << ans.first << "! ";
+        // for(auto i : ans.second) std::cout << i << ' ';
+        // std::cout << '\n';
         auto seq = zeidelSequential(a, b, n, eps);
-        std::cout << "SEQ = ";
-        for(auto i : seq.second) std::cout << i << ' ';
-        std::cout << '\n';
+        //std::cout << "SEQ = !" << seq.first << "! ";
+        //for(auto i : seq.second) std::cout << i << ' ';
+        //std::cout << '\n';
+        ASSERT_EQ(ans.first, seq.first);
+        double mse = 0;
+        for(size_t i = 0;i < n;++i) {
+            mse += (ans.second[i] - seq.second[i]) * (ans.second[i] - seq.second[i]);
+        }
+        mse = sqrt(mse);
+        ASSERT_LE(mse, 1e-8);
     }
 }
 
