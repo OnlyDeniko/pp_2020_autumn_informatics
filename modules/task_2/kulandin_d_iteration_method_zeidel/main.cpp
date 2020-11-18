@@ -26,31 +26,31 @@ TEST(Parallel_MPI, Test_1) {
         a[56] = 2; a[57] = 7; a[58] = 1;  a[59] = 8;  a[60] = 1;  a[61] = 1;  a[62] = 7;  a[63] = 98;
 
         b[0] = 95; b[1] = 116; b[2] = 96; b[3] = 90; b[4] = 124; b[5] = 127; b[6] = 127; b[7] = 125;
-        makeBeautifulMatrix(a, b, n);
+        makeBeautifulMatrix(&a, &b, n);
     }
 
     double timeParallel = MPI_Wtime();
-    auto ans = zeidelParallel(a, b, n, eps);
+    auto ans = zeidelParallel(&a, &b, n, eps);
     timeParallel = MPI_Wtime() - timeParallel;
 
     if (!procRank) {
         double timeSequential = MPI_Wtime();
-        auto seq = zeidelSequential(a, b, n, eps);
+        auto seq = zeidelSequential(&a, &b, n, eps);
         timeSequential = MPI_Wtime() - timeSequential;
         ASSERT_EQ(ans.first, seq.first);
         if (!ans.first) return;
         double mse = 0;
-        for(size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             mse += (ans.second[i] - seq.second[i]) * (ans.second[i] - seq.second[i]);
         }
         mse = sqrt(mse);
         ASSERT_LE(mse, EPS);
-        for (size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             double su = 0;
             for (size_t j = 0; j < n; ++j) {
                 su += a[i * n + j] * ans.second[j];
             }
-            ASSERT_LE(fabs(su - b[i]), eps * n);
+            ASSERT_LE(fabs(su - b[i]), sqrt(eps) * n);
         }
         printf("Parallel time:              %.10f\n", timeParallel);
         printf("Sequential time:            %.10f\n", timeSequential);
@@ -67,36 +67,36 @@ TEST(Parallel_MPI, Test_2) {
     std::vector<double> b(n, 1);
     if (!procRank) {
         a = {
-            10, 1, -1, 
-            1, 10, -1, 
+            10, 1, -1,
+            1, 10, -1,
             -1, 1, 10
         };
         b = {11, 10, 10};
-        makeBeautifulMatrix(a, b, n);
+        makeBeautifulMatrix(&a, &b, n);
     }
 
     double timeParallel = MPI_Wtime();
-    auto ans = zeidelParallel(a, b, n, eps);
+    auto ans = zeidelParallel(&a, &b, n, eps);
     timeParallel = MPI_Wtime() - timeParallel;
 
     if (!procRank) {
         double timeSequential = MPI_Wtime();
-        auto seq = zeidelSequential(a, b, n, eps);
+        auto seq = zeidelSequential(&a, &b, n, eps);
         timeSequential = MPI_Wtime() - timeSequential;
         ASSERT_EQ(ans.first, seq.first);
         if (!ans.first) return;
         double mse = 0;
-        for(size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             mse += (ans.second[i] - seq.second[i]) * (ans.second[i] - seq.second[i]);
         }
         mse = sqrt(mse);
         ASSERT_LE(mse, EPS);
-        for (size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             double su = 0;
             for (size_t j = 0; j < n; ++j) {
                 su += a[i * n + j] * ans.second[j];
             }
-            ASSERT_LE(fabs(su - b[i]), eps * n);
+            ASSERT_LE(fabs(su - b[i]), sqrt(eps) * n);
         }
         printf("Parallel time:              %.10f\n", timeParallel);
         printf("Sequential time:            %.10f\n", timeSequential);
@@ -117,31 +117,31 @@ TEST(Parallel_MPI, Test_3) {
             1, 3
         };
         b = {1, -1};
-        makeBeautifulMatrix(a, b, n);
+        makeBeautifulMatrix(&a, &b, n);
     }
 
     double timeParallel = MPI_Wtime();
-    auto ans = zeidelParallel(a, b, n, eps);
+    auto ans = zeidelParallel(&a, &b, n, eps);
     timeParallel = MPI_Wtime() - timeParallel;
 
     if (!procRank) {
         double timeSequential = MPI_Wtime();
-        auto seq = zeidelSequential(a, b, n, eps);
+        auto seq = zeidelSequential(&a, &b, n, eps);
         timeSequential = MPI_Wtime() - timeSequential;
         ASSERT_EQ(ans.first, seq.first);
         if (!ans.first) return;
         double mse = 0;
-        for(size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             mse += (ans.second[i] - seq.second[i]) * (ans.second[i] - seq.second[i]);
         }
         mse = sqrt(mse);
         ASSERT_LE(mse, EPS);
-        for (size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             double su = 0;
             for (size_t j = 0; j < n; ++j) {
                 su += a[i * n + j] * ans.second[j];
             }
-            ASSERT_LE(fabs(su - b[i]), eps * n);
+            ASSERT_LE(fabs(su - b[i]), sqrt(eps) * n);
         }
         printf("Parallel time:              %.10f\n", timeParallel);
         printf("Sequential time:            %.10f\n", timeSequential);
@@ -163,26 +163,26 @@ TEST(Parallel_MPI, Test_5) {
             6, 2, 20
         };
         b = {20, -40, 28};
-        makeBeautifulMatrix(a, b, n);
+        makeBeautifulMatrix(&a, &b, n);
     }
 
     double timeParallel = MPI_Wtime();
-    auto ans = zeidelParallel(a, b, n, eps);
+    auto ans = zeidelParallel(&a, &b, n, eps);
     timeParallel = MPI_Wtime() - timeParallel;
 
     if (!procRank) {
         double timeSequential = MPI_Wtime();
-        auto seq = zeidelSequential(a, b, n, eps);
+        auto seq = zeidelSequential(&a, &b, n, eps);
         timeSequential = MPI_Wtime() - timeSequential;
         ASSERT_EQ(ans.first, seq.first);
         if (!ans.first) return;
         double mse = 0;
-        for(size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             mse += (ans.second[i] - seq.second[i]) * (ans.second[i] - seq.second[i]);
         }
         mse = sqrt(mse);
         ASSERT_LE(mse, EPS);
-        for (size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             double su = 0;
             for (size_t j = 0; j < n; ++j) {
                 su += a[i * n + j] * ans.second[j];
@@ -209,26 +209,26 @@ TEST(Parallel_MPI, Test_4) {
             1, 1, 1
         };
         b = {5, 5, 5};
-        makeBeautifulMatrix(a, b, n);
+        makeBeautifulMatrix(&a, &b, n);
     }
 
     double timeParallel = MPI_Wtime();
-    auto ans = zeidelParallel(a, b, n, eps);
+    auto ans = zeidelParallel(&a, &b, n, eps);
     timeParallel = MPI_Wtime() - timeParallel;
 
     if (!procRank) {
         double timeSequential = MPI_Wtime();
-        auto seq = zeidelSequential(a, b, n, eps);
+        auto seq = zeidelSequential(&a, &b, n, eps);
         timeSequential = MPI_Wtime() - timeSequential;
         ASSERT_EQ(ans.first, seq.first);
         if (!ans.first) return;
         double mse = 0;
-        for(size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             mse += (ans.second[i] - seq.second[i]) * (ans.second[i] - seq.second[i]);
         }
         mse = sqrt(mse);
         ASSERT_LE(mse, EPS);
-        for (size_t i = 0;i < n;++i) {
+        for (size_t i = 0; i < n; ++i) {
             double su = 0;
             for (size_t j = 0; j < n; ++j) {
                 su += a[i * n + j] * ans.second[j];
