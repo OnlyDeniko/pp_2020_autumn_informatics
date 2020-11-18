@@ -11,22 +11,32 @@
 
 const double EPS = 1e-8;
 
+std::vector<double> randomVector(int sz) {
+    std::mt19937 gen;
+    gen.seed(static_cast<unsigned int>(time(0)));
+    std::vector<double> ans(sz);
+    for (int i = 0; i < sz; ++i) {
+        ans[i] = gen();
+    }
+    return ans;
+}
+
 bool converge(const std::vector<double> &x, const std::vector<double>& last, double eps){
     double ans = 0;
     for(size_t i = 0;i < x.size();++i) {
         double tmp = x[i] - last[i];
         ans += tmp * tmp;
     }
-    return sqrt(ans) < eps + EPS;
+    return sqrt(ans) < eps;
 }
 
-bool сorrectMatrix(const std::vector<double>& matrix, size_t n) {
-    return true;
+bool correctMatrix(const std::vector<double>& matrix, size_t n) {
     for (size_t i = 0; i < n; ++i) {
         double su = 0;
-        for(size_t j = 0;j < n;++j) if (j != i) su += matrix[i * n + j];
-        std::cout << i << ' ' << su << ' ' << matrix[i * n + i] << '\n';
-        if (su > matrix[i * n + i]){
+        for(size_t j = 0;j < n;++j) {
+            if (j != i) su += matrix[i * n + j];
+        }
+        if (su + EPS > matrix[i * n + i]){
             return false;
         }
     }
@@ -54,10 +64,10 @@ void makeBeautifulMatrix(std::vector<double>& a, std::vector<double>& b, size_t 
     }
 }
 
-std::pair<bool, std::vector<double>> zeidelSequential(std::vector<double>& a, std::vector<double>& b, size_t n, double eps) {
-    if (!сorrectMatrix(a, n)) {
-        return std::make_pair(0, b);
-    }
+std::pair<bool, std::vector<double> > zeidelSequential(std::vector<double>& a, std::vector<double>& b, size_t n, double eps) {
+    // if (!correctMatrix(a, n)) {
+    //     return std::make_pair(0, b);
+    // }
     int cntIterations = 100;
     std::vector<double> x(n, 0), last(n, 0);
     do{
@@ -75,68 +85,60 @@ std::pair<bool, std::vector<double>> zeidelSequential(std::vector<double>& a, st
 }
 
 double calcParallel(std::vector<double>& a, std::vector<double>& x, size_t row, size_t n){
-    return 0;
     int procNum, procRank;
     MPI_Comm_size(MPI_COMM_WORLD, &procNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
-    //std::cout << procRank + 1 << ' ' << row << '\n';
     size_t offset = n / procNum;
-    std::vector<int> sendCounts(procNum);
-    std::vector<int> displs(procNum, row * n);
-    std::vector<int> displsX(procNum, 0);
-    std::vector<double> recvBufA(offset + n % procNum, 0);
-    std::vector<double> recvBufX(offset + n % procNum, 0);
-    if (1){
-        size_t rem = n;
-        for (size_t i = 0;i < procNum;++i) {
-            sendCounts[i] = (i == procNum - 1 ? rem : offset);
-            rem -= offset;
-        }
-        for (size_t i = 1;i < procNum;++i) {
-            displs[i]   = displs[i - 1] + sendCounts[i - 1];
-            displsX[i]  = displsX[i - 1] + sendCounts[i - 1];
+    const int delta = n / procNum;
+    const int rem = n % procNum;
+    if (procRank == 0) {
+        for (int j = 1; j < procNum; ++j) {
+            MPI_Send(&a[0] + row * n + rem + j * delta, delta, MPI_DOUBLE, j, 0, MPI_COMM_WORLD);
+            MPI_Send(&x[0] + rem + j * delta, delta, MPI_DOUBLE, j, 1, MPI_COMM_WORLD);
         }
     }
-    MPI_Scatterv(a.data(), sendCounts.data(), displs.data(), MPI_DOUBLE, recvBufA.data(), recvBufA.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Scatterv(x.data(), sendCounts.data(), displsX.data(), MPI_DOUBLE, recvBufX.data(), recvBufX.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    //for(auto i : recvBufA) std::cout << "! " << procRank + 1 << ' ' << i << '\n';
-    //for(auto i : recvBufX) std::cout << "!! " << procRank + 1 << ' ' << i << '\n';
-    double localAns = 0;
-    double globalAns = 0;
-    for (size_t i = 0;i < recvBufA.size();++i) {
-        localAns += recvBufA[i] * recvBufX[i];
+    std::vector<double> local(procRank == 0 ? rem + delta : delta, 0);
+    std::vector<double> localX(procRank == 0 ? rem + delta : delta, 0);
+    if (procRank == 0) {
+        local = std::vector<double>(a.begin() + row * n, a.begin() + row * n + delta + rem);
+        localX = std::vector<double>(x.begin(), x.begin() + delta + rem);
+    } else {
+        MPI_Status status;
+        MPI_Recv(&local[0], delta, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
+        MPI_Recv(&localX[0], delta, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &status);
     }
-    //MPI_Gatherv(recvBufA.data(), recvBufA.size(), MPI_DOUBLE, a.data(), sendCounts.data(), displs.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    //MPI_Gatherv(recvBufX.data(), recvBufX.size(), MPI_DOUBLE, x.data(), sendCounts.data(), displsX.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&localAns, &globalAns, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    return globalAns;
+    double localSum = 0;
+    double globalSum = 0;
+    for(size_t i = 0;i < (procRank == 0 ? rem + delta : delta);++i){
+        localSum += local[i] * localX[i];
+    }
+    MPI_Reduce(&localSum, &globalSum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    return globalSum;
 }
 
-std::pair<bool, std::vector<double>> zeidelParallel(std::vector<double>& a, std::vector<double>& b, size_t n, double eps) {
+std::pair<bool, std::vector<double> > zeidelParallel(std::vector<double>& a, std::vector<double>& b, size_t n, double eps) {
     int procNum, procRank;
     MPI_Comm_size(MPI_COMM_WORLD, &procNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
-
-    if (!procRank && !сorrectMatrix(a, n)) {
-        return std::make_pair(0, b);
-    }
+    char check = !correctMatrix(a, n);
+    MPI_Bcast(&check, 1, MPI_CHAR, 0, MPI_COMM_WORLD);
+    // if (check) {
+    //     return std::make_pair(0, b);
+    // }
     int cntIterations = 100;
     std::vector<double> x(n, 0), last(n, 0);
-    // return std::make_pair(1, b);
+    char result;
     do{
         last = x;
         for(size_t i = 0;i < n;++i){
             x[i] = 0;
-            // MPI_Barrier(MPI_COMM_WORLD);
             double gg = calcParallel(a, x, i, n);
             x[i] = (b[i] - gg) / a[i * n + i];
         }
-        // std::cout << "PROC = " << procRank + 1 << '\n';
-        // for(auto i : x) std::cout << i << ' ';
-        // std::cout << '\n';
-        // return std::make_pair(1, x);
-        
-    }while(!converge(x, last, eps) && cntIterations--);
+        if (!converge(x, last, eps) && cntIterations--) result = 1;
+        else result = 0;
+        MPI_Bcast(&result, 1, MPI_CHAR, 0, MPI_COMM_WORLD);
+    }while(result);
 
     return std::make_pair(cntIterations != 0, x);
 }
