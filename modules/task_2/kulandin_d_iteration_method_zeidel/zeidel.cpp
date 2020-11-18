@@ -87,9 +87,8 @@ double calcParallel(std::vector<double>* a, std::vector<double>* x, size_t row, 
     int procNum, procRank;
     MPI_Comm_size(MPI_COMM_WORLD, &procNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
-    size_t offset = n / procNum;
-    const int delta = n / procNum;
-    const int rem = n % procNum;
+    const size_t delta = n / procNum;
+    const size_t rem = n % procNum;
     if (procRank == 0) {
         for (int j = 1; j < procNum; ++j) {
             MPI_Send(&(*a)[0] + row * n + rem + j * delta, delta, MPI_DOUBLE, j, 0, MPI_COMM_WORLD);
